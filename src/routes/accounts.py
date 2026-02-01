@@ -209,11 +209,19 @@ async def refresh_access_token(
 ):
     try:
         payload = jwt_manager.decode_refresh_token(request_data.refresh_token)
-        user_id = int(payload.get("user_id"))
-        if not user_id:
-            raise HTTPException(status_code=401, detail="Refresh token not found.")
-    except (TokenExpiredError, Exception):
-        raise HTTPException(status_code=400, detail="Token has expired.")
+
+        user_id_raw = payload.get("user_id")
+        if user_id_raw is None:
+            raise InvalidTokenError()
+
+        user_id = int(user_id_raw)
+
+    except Exception as e:
+        error_name = type(e).__name__
+        if error_name == "TokenExpiredError":
+            raise HTTPException(status_code=400, detail="Token has expired.")
+
+        raise HTTPException(status_code=400, detail="Invalid token.")
 
     token_query = select(RefreshTokenModel).where(RefreshTokenModel.token == request_data.refresh_token)
     result = await db.execute(token_query)
