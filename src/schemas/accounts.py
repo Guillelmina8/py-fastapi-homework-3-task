@@ -6,6 +6,7 @@ from database import accounts_validators
 class UserBase(BaseModel):
     email: EmailStr
 
+
 class UserCreate(UserBase):
     password: str
 
